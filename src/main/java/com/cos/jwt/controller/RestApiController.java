@@ -1,6 +1,6 @@
 package com.cos.jwt.controller;
 
-가import com.cos.jwt.model.User;
+import com.cos.jwt.model.User;
 import com.cos.jwt.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
