@@ -1,6 +1,7 @@
 package com.cos.jwt.config;
 
 import com.cos.jwt.Filter.MyFilter1;
+import com.cos.jwt.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -20,12 +21,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+
         http.csrf().disable();
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS) //세션 사용 안함
                 .and()
                 .addFilter(corsFilter)          //CorsConfig를 Filter에 적용함
                 .formLogin().disable()
                 .httpBasic().disable()          //bearer 토큰 방식을 쓰겠다 httpBaisc 방식은 노션 참고
+
+                .addFilter(new JwtAuthenticationFilter(authenticationManager())) // authenticationManager는 WebSecurityConfigurerAdapter가 가지고 있음, Filter에 Authentication 구현
+
                 .authorizeRequests()
                 .antMatchers("/api/v1/user/**")
                 .access("hasRole('ROLE_USER') or hasRole('ROLE_MANAGER') or hasRole('ROLE_ADMIN')")
