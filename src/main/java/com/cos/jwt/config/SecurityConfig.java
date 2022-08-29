@@ -2,6 +2,8 @@ package com.cos.jwt.config;
 
 import com.cos.jwt.Filter.MyFilter1;
 import com.cos.jwt.jwt.JwtAuthenticationFilter;
+import com.cos.jwt.jwt.JwtAuthorizationFilter;
+import com.cos.jwt.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -19,6 +21,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final CorsFilter corsFilter;            //CorsConfig에 CorsFilter를 @Bean 등록을 해놨으므로 이렇게 사용이 가능, import 주의
 
+    private final UserRepository userRepository;
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
 
@@ -30,6 +34,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .httpBasic().disable()          //bearer 토큰 방식을 쓰겠다 httpBaisc 방식은 노션 참고
 
                 .addFilter(new JwtAuthenticationFilter(authenticationManager())) // authenticationManager는 WebSecurityConfigurerAdapter가 가지고 있음, Filter에 Authentication 구현
+                .addFilter(new JwtAuthorizationFilter(authenticationManager(), userRepository))
 
                 .authorizeRequests()
                 .antMatchers("/api/v1/user/**")
