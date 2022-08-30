@@ -23,6 +23,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+
+//토큰으로 들어왔을 때 먼저 받게 되는 필터임
+//
+
 public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 
     private UserRepository userRepository;
@@ -30,42 +34,42 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
     public JwtAuthorizationFilter(AuthenticationManager authenticationManager, UserRepository userRepository) {
         super(authenticationManager);
         this.userRepository = userRepository;
-
     }
 
 
-    //인증이나 권한이 필요한 주소요청이 있을 떄 해당 필터를 타게 됨
-    //헤더값을 살펴보면 됨
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
-        //super.doFilterInternal(request, response, chain);
-        System.out.println("인증이나 권한이 필요한 주소 요청이 됨");
-        String authorization = request.getHeader("Authorization");
-        System.out.println("authorization = " + authorization);
-
-        //JWT 토큰 검증
-        if (authorization == null || !authorization.startsWith("Bearer")) {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws IOException, ServletException {
+        String header = request.getHeader(JwtProperties.HEADER_STRING);
+        if(header == null || !header.startsWith(JwtProperties.TOKEN_PREFIX)) {
             chain.doFilter(request, response);
             return;
         }
+        System.out.println("header : "+header);
+        String token = request.getHeader(JwtProperties.HEADER_STRING)
+                .replace(JwtProperties.TOKEN_PREFIX, "");
 
-        //JWT 토큰을 검증해서 정상적인 사용자인지 확인
-        request.getHeader("Authorization").replace("Bearer ", "");
-        String username = JWT.require(Algorithm.HMAC512("cos")).build().verify(authorization).getClaim("username").asString();
-        System.out.println("username = " + username);
+        // 토큰 검증 (이게 인증이기 때문에 AuthenticationManager도 필요 없음)
+        // 내가 SecurityContext에 집적접근해서 세션을 만들때 자동으로 UserDetailsService에 있는 loadByUsername이 호출됨.
+        String username = JWT.require(Algorithm.HMAC512(JwtProperties.SECRET)).build().verify(token)
+                .getClaim("username").asString();
 
-        //서명이 정상적으로 됨
-        if (username != null) {
-            User userEntity = userRepository.findByUsername(username);
-            PrincipalDetails principalDetails = new PrincipalDetails(userEntity);
+        if(username != null) {
+            User user = userRepository.findByUsername(username);
 
-            //username만 가지고 authentication 객체를 만듬 로그인을 할 떄 되는건데 이거 중요할듯..
-            Authentication authentication = new UsernamePasswordAuthenticationToken(principalDetails, null, principalDetails.getAuthorities());
+            // 인증은 토큰 검증시 끝. 인증을 하기 위해서가 아닌 스프링 시큐리티가 수행해주는 권한 처리를 위해
+            // 아래와 같이 토큰을 만들어서 Authentication 객체를 강제로 만들고 그걸 세션에 저장!
+            PrincipalDetails principalDetails = new PrincipalDetails(user);
+            Authentication authentication =
+                    new UsernamePasswordAuthenticationToken(
+                            principalDetails, //나중에 컨트롤러에서 DI해서 쓸 때 사용하기 편함.
+                            null, // 패스워드는 모르니까 null 처리, 어차피 지금 인증하는게 아니니까!!
+                            principalDetails.getAuthorities());
 
-            //강제로 시큐리티의 세션에 접근하여 Authentication 객체를 저장
+            // 강제로 시큐리티의 세션에 접근하여 값 저장
             SecurityContextHolder.getContext().setAuthentication(authentication);
-
-            chain.doFilter(request, response);
         }
+
+        chain.doFilter(request, response);
     }
 }

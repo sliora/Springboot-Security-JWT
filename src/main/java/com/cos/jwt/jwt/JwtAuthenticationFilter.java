@@ -55,9 +55,12 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             //PrincipalDetailsService의 loadUserByUsername() 함수가 실행됨
             //정상이면 authentication이 리턴 됨
             //DB에 있는 username과 password가 일치한다.
+
+            //TODO: 다우 API 통신을해서 OK가 되는지 확인하는 조건문?
+            //TODO: DB VIEW -> 암호가 없음 username만 매칭해서 Authentication 객체로 만들어줌
             Authentication authentication = authenticationManager.authenticate(authenticationToken);
 
-            //PrincipalDetail를 세션에 담아야 함 왜 담냐면 권한 관리가 됨.. 만약에 권한 관리가 필요 없으면 안해도 됨
+            //PrincipalDetail 를 세션에 담아야 함 왜 담냐면 권한 관리가 됨.. 만약에 권한 관리가 필요 없으면 안해도 됨
             PrincipalDetails principalDetails = (PrincipalDetails) authentication.getPrincipal();
             System.out.println("principalDetails.getUser().getUsername() = " + principalDetails.getUser().getUsername()); //로그인 정상적으로 되었다는 뜻
             System.out.println("principalDetails.getUser().getUsername() = " + principalDetails.getUser().getPassword());
@@ -80,11 +83,13 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
         System.out.println("==========인증이 완료됨=======");
 
+        //TODO: 리프레쉬 토큰 + 재인증 과정 추가
+
         PrincipalDetails principalDetails = (PrincipalDetails) authResult.getPrincipal();
 
         String jwtToken = JWT.create()
-                .withSubject("cos토큰")
-                .withExpiresAt(new Date(System.currentTimeMillis() + (60000 * 1)))
+                .withSubject("cos")
+                .withExpiresAt(new Date(System.currentTimeMillis() + (60000 * 10)))
                 .withClaim("id", principalDetails.getUser().getId())
                 .withClaim("username", principalDetails.getUser().getUsername())
                 .sign(Algorithm.HMAC512("cos"));

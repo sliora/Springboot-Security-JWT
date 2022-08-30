@@ -28,5 +28,8 @@ public class MyFilter1 implements Filter {
             }
             System.out.println("headerAuth = " + headerAuth);
         }
+        else {
+            System.out.println(" ====== 필터에 걸리심 ㅋ======= ");
+        }
     }
 }

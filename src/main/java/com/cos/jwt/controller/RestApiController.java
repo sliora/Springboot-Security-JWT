@@ -1,8 +1,10 @@
 package com.cos.jwt.controller;
 
+import com.cos.jwt.auth.PrincipalDetails;
 import com.cos.jwt.model.User;
 import com.cos.jwt.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,8 +35,13 @@ public class RestApiController {
     }
 
     //user, manager, admin 가능    //user, manager, admin 가능
-    @GetMapping("/api/v1/user")
-    public String user() {
+    @GetMapping("api/v1/user")
+    @ResponseBody
+    public String user(Authentication authentication) {
+        PrincipalDetails principal = (PrincipalDetails) authentication.getPrincipal();
+        System.out.println("principal : "+principal.getUser().getId());
+        System.out.println("principal : "+principal.getUser().getUsername());
+        System.out.println("principal : "+principal.getUser().getPassword());
         return "user";
     }
 
